@@ -272,4 +272,8 @@ The processed video is saved as `output_inference.avi` in the working directory 
 
 ## 📄 License
 
-This project is for research and educational purposes. Please refer to the licenses of the individual libraries and the model weights on Hugging Face for usage terms.
+This project is for research and educational purposes.
+
+## 👩🏻‍💻Author
+
+Jacques Nico Belmonte - AI Developer
