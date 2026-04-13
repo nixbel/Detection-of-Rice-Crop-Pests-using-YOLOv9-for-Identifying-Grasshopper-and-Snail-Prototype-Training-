@@ -11,6 +11,7 @@ A real-time pest detection and tracking application built with **YOLOv9**, **Dee
 - [Tech Stack](#tech-stack)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
+- [Training](#training)
 - [Configuration](#configuration)
 - [Usage](#usage)
 - [Project Structure](#project-structure)
@@ -113,6 +114,133 @@ The app will open automatically in your browser at `http://localhost:8501`.
 
 ---
 
+## 🏋️ Training
+
+The model was trained (and can be retrained) using either **YOLOv9** or **YOLOv8** via the provided shell scripts. Both scripts target the same snail-grasshopper dataset.
+
+### 📁 Dataset
+
+Both training scripts expect a dataset configuration file at:
+
+```
+/home/avela/miniconda3/envs/yolov9detection/yolov9/snail-grasshopper_dataset/data.yaml
+```
+
+Make sure your `data.yaml` defines the correct paths to your `train`, `val`, and `test` image sets, as well as the class names (`Grasshopper`, `Snail`).
+
+---
+
+### 🔵 Option A — YOLOv9 Fine-tuning (`finetune.sh`)
+
+Fine-tunes a pre-trained YOLOv9 checkpoint (`best.pt`) on the pest dataset.
+
+**Prerequisites**
+
+```bash
+pip install ultralytics
+```
+
+**Run**
+
+```bash
+bash finetune.sh
+```
+
+**Key Parameters**
+
+| Parameter | Value | Description |
+|---|---|---|
+| `MODEL_PATH` | `/home/avela/best.pt` | Pre-trained YOLOv9 checkpoint to fine-tune |
+| `EPOCHS` | `100` | Maximum training epochs |
+| `BATCH_SIZE` | `16` | Batch size per step |
+| `IMG_SIZE` | `640` | Input image resolution |
+| `DEVICE` | `0` | GPU device index (`cpu` for CPU-only) |
+| `PATIENCE` | `50` | Early stopping patience (epochs without improvement) |
+| `SAVE_PERIOD` | `10` | Save a checkpoint every N epochs |
+| `optimizer` | `AdamW` | Optimizer |
+| `lr0` | `0.001` | Initial learning rate |
+| `lrf` | `0.01` | Final learning rate (fraction of `lr0`) |
+| `warmup_epochs` | `3` | Gradual LR warmup at the start of training |
+| `amp` | `True` | Automatic Mixed Precision (faster GPU training) |
+| `mosaic` | `1.0` | Mosaic augmentation probability |
+
+**Output**
+
+```
+snail_grasshopper_detection/
+└── yolov9_finetune/
+    └── weights/
+        ├── best.pt    ← Best checkpoint (by validation mAP)
+        └── last.pt    ← Final epoch checkpoint
+```
+
+---
+
+### 🟢 Option B — YOLOv8 Training (`yolov8training.sh`)
+
+Trains a YOLOv8 medium model (`yolov8m.pt`) from scratch on the pest dataset. Suitable as a lighter-weight alternative or baseline comparison.
+
+**Prerequisites**
+
+The script activates the conda environment and installs dependencies automatically:
+
+```bash
+conda activate /home/avela/miniconda3/envs/yolov9detection
+pip install ultralytics
+```
+
+**Run**
+
+```bash
+bash yolov8training.sh
+```
+
+**Key Parameters**
+
+| Parameter | Value | Description |
+|---|---|---|
+| `model` | `yolov8m.pt` | YOLOv8 medium pretrained weights |
+| `epochs` | `100` | Maximum training epochs |
+| `imgsz` | `640` | Input image resolution |
+| `batch` | `8` | Batch size per step |
+| `project` | `/home/avela/yolov8_runs` | Output directory |
+| `name` | `snail_grasshopper_yolov8m` | Experiment subfolder name |
+
+**Output**
+
+```
+/home/avela/yolov8_runs/
+└── snail_grasshopper_yolov8m/
+    └── weights/
+        ├── best.pt
+        └── last.pt
+```
+
+---
+
+### ⚖️ YOLOv9 vs YOLOv8 Comparison
+
+| | YOLOv9 (`finetune.sh`) | YOLOv8 (`yolov8training.sh`) |
+|---|---|---|
+| Base model | Custom `best.pt` checkpoint | `yolov8m.pt` (pretrained) |
+| Batch size | 16 | 8 |
+| Optimizer | AdamW | Default (SGD) |
+| AMP | ✅ Yes | Default |
+| Early stopping | ✅ Yes (patience=50) | Default |
+| Augmentation | Fully configured | Default |
+| Use case | Fine-tuning existing model | Training new baseline |
+
+---
+
+### 💡 Tips for Retraining
+
+- **GPU strongly recommended** — both scripts default to `device=0` (first GPU). Change to `device=cpu` if no GPU is available, but expect significantly longer training times.
+- **Adjust batch size** for your GPU VRAM — reduce to `8` or `4` if you encounter out-of-memory errors on the YOLOv9 script.
+- **Monitor training** — both scripts save plots and metrics inside the output project folder. Open `results.png` to review loss and mAP curves.
+- **Using the trained model** — copy `best.pt` to Hugging Face or point `MODEL_PATH` directly to it in `finetune.sh` for further fine-tuning rounds.
+
+---
+
 ## ⚙️ Configuration
 
 ### RTSP Stream URL
@@ -178,6 +306,8 @@ DeepSort(max_age=60, n_init=3, max_iou_distance=0.8)
 ```
 pest-detection-system/
 ├── pest-detection-prototype-f.py   # Main application entry point
+├── finetune.sh                     # YOLOv9 fine-tuning script
+├── yolov8training.sh               # YOLOv8 training script
 ├── output_inference.avi            # Generated after video inference (auto-created)
 └── README.md
 ```
@@ -268,12 +398,18 @@ The processed video is saved as `output_inference.avi` in the working directory 
 - Ensure you are using a compatible version of `deep-sort-realtime`. The code relies on `track.det_class` being populated by the tracker.
 - Install the recommended version: `pip install deep-sort-realtime==1.3.2`
 
+**Out-of-memory error during training**
+
+- Reduce `BATCH_SIZE` in `finetune.sh` (try `8` or `4`).
+- Reduce `batch` in `yolov8training.sh` (try `4`).
+- Set `amp=True` to enable Automatic Mixed Precision if not already enabled.
+
 ---
 
 ## 📄 License
 
 This project is for research and educational purposes.
 
-## 👩🏻‍💻Author
+## 👩🏻‍💻 Author
 
 Jacques Nico Belmonte - AI Developer
