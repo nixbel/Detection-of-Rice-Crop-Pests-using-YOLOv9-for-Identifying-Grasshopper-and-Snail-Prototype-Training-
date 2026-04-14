@@ -28,6 +28,8 @@ A real-time pest detection and tracking application built with **YOLOv9**, **Dee
 - [Output & Logging](#output--logging)
 - [Known Limitations](#known-limitations)
 - [Troubleshooting](#troubleshooting)
+- [Author](#author)
+- [Date Created](#-date-created)
 
 ---
 
@@ -417,8 +419,12 @@ The processed video is saved as `output_inference.avi` in the working directory 
 
 ## 📄 License
 
-This project is for research and educational purposes.
+This project is for research and project purposes.
 
 ## 👩🏻‍💻 Author
 
 Jacques Nico Belmonte - AI Developer
+
+## 📆 Date Created
+
+January 2026
